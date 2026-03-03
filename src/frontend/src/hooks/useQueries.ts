@@ -182,9 +182,16 @@ export function useIsAdmin() {
     queryKey: ["isAdmin", principal],
     queryFn: async () => {
       if (!actor) return false;
-      return actor.isCallerAdmin();
+      try {
+        return await actor.isCallerAdmin();
+      } catch {
+        // Backend traps when the caller principal is not registered in the roles map.
+        // Treat any error as "not admin" rather than propagating it.
+        return false;
+      }
     },
     enabled: !!actor && !isFetching,
     staleTime: 0,
+    retry: false, // Don't retry on error — a trap means definitively not admin
   });
 }
